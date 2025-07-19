@@ -1,3 +1,4 @@
+// ---- Firebase SDK and providers configured at the top ----
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -24,6 +25,7 @@ const analytics = getAnalytics(app);
 let currentUser = null;
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let currentTransactionType = 'income';
+
 
 document.addEventListener('DOMContentLoaded', function() {
     // Firebase providers/objects
@@ -318,4 +320,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
-
