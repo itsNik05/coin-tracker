@@ -1,4 +1,12 @@
-// -------- Your Config and Some App Variables --------
+// ---- Firebase SDK and providers configured at the top ----
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAJCuq-CEftttLiirQijz27XCxsja3MqVg",
   authDomain: "coin-tracker-1ea73.firebaseapp.com",
@@ -9,20 +17,23 @@ const firebaseConfig = {
   measurementId: "G-FXP640JDTB"
 };
 
-// App-level variables not tied to DOM:
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+// Global app state
 let currentUser = null;
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let currentTransactionType = 'income';
 
-// -------- Everything else must run after DOMContentLoaded --------
+
 document.addEventListener('DOMContentLoaded', function() {
-    // --------- Initialize Firebase and Providers ----------
-    firebase.initializeApp(firebaseConfig);
+    // Firebase providers/objects
     const auth = firebase.auth();
     const googleProvider = new firebase.auth.GoogleAuthProvider();
     const outlookProvider = new firebase.auth.OAuthProvider('microsoft.com');
 
-    // ------------ DOM Selections --------------
+    // DOM Elements
     const menuBtn = document.getElementById('menuBtn');
     const dropdownMenu = document.getElementById('dropdownMenu');
     const authSection = document.getElementById('authSection');
@@ -46,15 +57,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalExpense = document.getElementById('totalExpense');
     const totalBalance = document.getElementById('totalBalance');
 
-    // ---------- Initialization -----------
-    // Set today's date default
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.value = today;
-    renderTransactions();
-    updateSummary();
-    updateAuthUI();
+    // --- Menu open/close ---
+    menuBtn.addEventListener('click', function(event) {
+        dropdownMenu.classList.toggle('show');
+        event.stopPropagation();
+    });
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.nav-menu')) {
+            dropdownMenu.classList.remove('show');
+        }
+    });
 
-    // ---------- Firebase Auth Watcher -----------
+    // --- Tab switch ---
+    incomeTab.addEventListener('click', () => switchTab('income'));
+    expenseTab.addEventListener('click', () => switchTab('expense'));
+
+    // --- Add transaction ---
+    addBtn.addEventListener('click', addTransaction);
+
+    // --- Download btns ---
+    weeklyBtn.addEventListener('click', () => downloadPDF('weekly'));
+    monthlyBtn.addEventListener('click', () => downloadPDF('monthly'));
+
+    // --- Auth modal ---
+    closeModal.addEventListener('click', hideModal);
+    loginModal.addEventListener('click', function(e) {
+        if (e.target === loginModal) hideModal();
+    });
+    googleLogin.addEventListener('click', googleLoginFunc);
+    outlookLogin.addEventListener('click', outlookLoginFunc);
+
+    [sourceInput, amountInput, dateInput].forEach(input => {
+        input.addEventListener('input', validateForm);
+    });
+
+    // Set today's date as default
+    dateInput.value = (new Date()).toISOString().split('T')[0];
+
+    // --- Firebase Auth watcher ---
     auth.onAuthStateChanged(function(user) {
         if (user) {
             currentUser = {
@@ -68,61 +108,25 @@ document.addEventListener('DOMContentLoaded', function() {
         updateAuthUI();
     });
 
-    // ---- Menu (collapsible) ----
-    menuBtn.addEventListener('click', function(event) {
-        dropdownMenu.classList.toggle('show');
-        event.stopPropagation();
-    });
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.nav-menu')) {
-            dropdownMenu.classList.remove('show');
-        }
-    });
-
-    // ---- Tab Switch ----
-    incomeTab.addEventListener('click', () => switchTab('income'));
-    expenseTab.addEventListener('click', () => switchTab('expense'));
-
-    // ---- Add Transaction ----
-    addBtn.addEventListener('click', addTransaction);
-
-    // ---- Download PDF ----
-    weeklyBtn.addEventListener('click', () => downloadPDF('weekly'));
-    monthlyBtn.addEventListener('click', () => downloadPDF('monthly'));
-
-    // ---- Login Modal ----
-    closeModal.addEventListener('click', hideModal);
-    loginModal.addEventListener('click', function(e) {
-        if (e.target === loginModal) hideModal();
-    });
-    googleLogin.addEventListener('click', googleLoginFunc);
-    outlookLogin.addEventListener('click', outlookLoginFunc);
-
-    // ---- Form Validation ----
-    [sourceInput, amountInput, dateInput].forEach(input => {
-        input.addEventListener('input', validateForm);
-    });
+    // --- UI Init ---
+    renderTransactions();
+    updateSummary();
+    updateAuthUI();
     validateForm();
 
-    // ---- Function Definitions ----
+    // --- App functions ---
     function switchTab(type) {
         currentTransactionType = type;
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`[data-type="${type}"]`).classList.add('active');
+        [incomeTab, expenseTab].forEach(btn => btn.classList.remove('active'));
+        if (type === 'income') incomeTab.classList.add('active');
+        else expenseTab.classList.add('active');
         transactionType.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-        updateFormStyling();
-    }
-
-    function updateFormStyling() {
-        addBtn.style.background = currentTransactionType === 'income'
-            ? 'var(--success-color)' : 'var(--danger-color)';
+        addBtn.style.background = (type === "income") ?
+            'var(--success-color)' : 'var(--danger-color)';
     }
 
     function validateForm() {
-        const isValid = sourceInput.value.trim() && 
-                       amountInput.value && 
-                       parseFloat(amountInput.value) > 0 && 
-                       dateInput.value;
+        const isValid = sourceInput.value.trim() && amountInput.value && parseFloat(amountInput.value) > 0 && dateInput.value;
         addBtn.disabled = !isValid;
         addBtn.style.opacity = isValid ? '1' : '0.6';
     }
@@ -147,29 +151,21 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('transactions', JSON.stringify(transactions));
         sourceInput.value = '';
         amountInput.value = '';
-        dateInput.value = new Date().toISOString().split('T')[0];
+        dateInput.value = (new Date()).toISOString().split('T')[0];
         renderTransactions();
         updateSummary();
-        showToast(`${currentTransactionType.charAt(0).toUpperCase() + currentTransactionType.slice(1)} added successfully!`);
+        showToast(`${currentTransactionType.charAt(0).toUpperCase() + currentTransactionType.slice(1)} added!`);
+        validateForm();
     }
 
     function renderTransactions() {
-        const recentTransactions = transactions.slice(0, 5);
-        if (recentTransactions.length === 0) {
-            transactionsList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-receipt"></i>
-                    <p>No transactions yet. Add your first transaction above!</p>
-                </div>
-            `;
+        if (transactions.length === 0) {
+            transactionsList.innerHTML = `<div class="empty-state"><i class="fas fa-receipt"></i><p>No transactions yet. Add your first transaction above!</p></div>`;
             return;
         }
-        transactionsList.innerHTML = recentTransactions.map(transaction => `
+        transactionsList.innerHTML = transactions.slice(0, 5).map(transaction => `
             <div class="transaction-item">
-                <div class="transaction-info">
-                    <h4>${transaction.source}</h4>
-                    <p>${formatDate(transaction.date)}</p>
-                </div>
+                <div class="transaction-info"><h4>${transaction.source}</h4><p>${formatDate(transaction.date)}</p></div>
                 <div class="transaction-amount ${transaction.type}">
                     ${transaction.type === 'income' ? '+' : '-'}₹${transaction.amount.toFixed(2)}
                 </div>
@@ -178,17 +174,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateSummary() {
-        const income = transactions
-            .filter(t => t.type === 'income')
-            .reduce((sum, t) => sum + t.amount, 0);
-        const expense = transactions
-            .filter(t => t.type === 'expense')
-            .reduce((sum, t) => sum + t.amount, 0);
+        const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+        const expense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
         const balance = income - expense;
         totalIncome.textContent = `₹${income.toFixed(2)}`;
         totalExpense.textContent = `₹${expense.toFixed(2)}`;
         totalBalance.textContent = `₹${balance.toFixed(2)}`;
         totalBalance.style.color = balance >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+    }
+
+    function showModal() {
+        loginModal.classList.add('show');
+    }
+    function hideModal() {
+        loginModal.classList.remove('show');
     }
 
     function downloadPDF(period) {
@@ -211,49 +210,25 @@ document.addEventListener('DOMContentLoaded', function() {
     function generatePDF(transactions, period) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFontSize(20);
-        doc.setTextColor(37, 99, 235);
-        doc.text('Coin Tracker', 20, 25);
-        doc.setFontSize(16);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`${period.charAt(0).toUpperCase() + period.slice(1)} Statement`, 20, 35);
+        doc.setFontSize(20); doc.setTextColor(37, 99, 235); doc.text('Coin Tracker', 20, 25);
+        doc.setFontSize(16); doc.setTextColor(0, 0, 0); doc.text(`${period.charAt(0).toUpperCase() + period.slice(1)} Statement`, 20, 35);
         doc.setFontSize(12);
-        doc.text(`Generated for: ${currentUser.name}`, 20, 45);
-        doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 52);
-
+        doc.text(`Generated for: ${currentUser.name}`, 20, 45); doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 52);
         // Summary
-        const income = transactions
-            .filter(t => t.type === 'income')
-            .reduce((sum, t) => sum + t.amount, 0);
-
-        const expense = transactions
-            .filter(t => t.type === 'expense')
-            .reduce((sum, t) => sum + t.amount, 0);
-
-        doc.setFontSize(14);
-        doc.text('Summary:', 20, 70);
-        doc.setFontSize(12);
-        doc.setTextColor(16, 185, 129);
-        doc.text(`Total Income: ₹${income.toFixed(2)}`, 20, 80);
-        doc.setTextColor(239, 68, 68);
-        doc.text(`Total Expense: ₹${expense.toFixed(2)}`, 20, 88);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`Balance: ₹${(income - expense).toFixed(2)}`, 20, 96);
-
+        const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+        const expense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+        doc.setFontSize(14); doc.text('Summary:', 20, 70);
+        doc.setFontSize(12); doc.setTextColor(16, 185, 129); doc.text(`Total Income: ₹${income.toFixed(2)}`, 20, 80);
+        doc.setTextColor(239, 68, 68); doc.text(`Total Expense: ₹${expense.toFixed(2)}`, 20, 88);
+        doc.setTextColor(0, 0, 0); doc.text(`Balance: ₹${(income - expense).toFixed(2)}`, 20, 96);
         // Transactions
-        doc.setFontSize(14);
-        doc.text('Transactions:', 20, 115);
-
-        let yPosition = 125;
-        doc.setFontSize(10);
+        doc.setFontSize(14); doc.text('Transactions:', 20, 115);
+        let yPosition = 125; doc.setFontSize(10);
         if (transactions.length === 0) {
             doc.text('No transactions found for this period.', 20, yPosition);
         } else {
-            transactions.forEach((transaction, index) => {
-                if (yPosition > 270) {
-                    doc.addPage();
-                    yPosition = 20;
-                }
+            transactions.forEach((transaction) => {
+                if (yPosition > 270) { doc.addPage(); yPosition = 20; }
                 const sign = transaction.type === 'income' ? '+' : '-';
                 const text = `${formatDate(transaction.date)} | ${transaction.source} | ${sign}₹${transaction.amount.toFixed(2)}`;
                 doc.text(text, 20, yPosition);
@@ -264,16 +239,18 @@ document.addEventListener('DOMContentLoaded', function() {
         showToast('PDF downloaded successfully!');
     }
 
-    function showModal() {
-        loginModal.classList.add('show');
+    function showToast(message) {
+        toastMessage.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
     }
 
-    function hideModal() {
-        loginModal.classList.remove('show');
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     }
 
-    // -------- Authentication Functions --------
-
+    // --- Firebase Auth logic ---
     function googleLoginFunc() {
         auth.signInWithPopup(googleProvider)
         .then((result) => {
@@ -284,13 +261,12 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             updateAuthUI();
             hideModal();
-            showToast('Signed in with Google successfully!');
+            showToast('Signed in with Google!');
         })
         .catch((error) => {
             showToast(error.message);
         });
     }
-
     function outlookLoginFunc() {
         auth.signInWithPopup(outlookProvider)
         .then((result) => {
@@ -301,18 +277,17 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             updateAuthUI();
             hideModal();
-            showToast('Signed in with Outlook successfully!');
+            showToast('Signed in with Outlook!');
         })
         .catch((error) => {
             showToast(error.message);
         });
     }
-
-    window.logout = function logout() { // window.logout needed for inline html onclick
+    window.logout = function logout() {
         auth.signOut().then(() => {
             currentUser = null;
             updateAuthUI();
-            showToast('Signed out successfully!');
+            showToast('Signed out!');
         });
     };
 
@@ -339,27 +314,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     Sign in with Outlook
                 </button>
             `;
-            // Re-attach real event listeners for dropdown
+            // Attach event handlers for dropdown menu
             document.getElementById("googleLoginInside").onclick = googleLoginFunc;
             document.getElementById("outlookLoginInside").onclick = outlookLoginFunc;
         }
     }
-
-    function showToast(message) {
-        toastMessage.textContent = message;
-        toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
-    }
-
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        });
-    }
 });
-// ---- END of script.js ----
