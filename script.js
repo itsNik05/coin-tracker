@@ -8,6 +8,10 @@ const firebaseConfig = {
   appId: "1:952209322496:web:8f94a2cee2e4ab22e99ee5",
   measurementId: "G-FXP640JDTB"
 };
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+const outlookProvider = new firebase.auth.OAuthProvider('microsoft.com');
 
 // Initialize Firebase (uncomment when you have config)
 // firebase.initializeApp(firebaseConfig);
@@ -86,8 +90,8 @@ function setupEventListeners() {
     });
 
     // Auth buttons (mock for now)
-    googleLogin.addEventListener('click', mockGoogleLogin);
-    outlookLogin.addEventListener('click', mockOutlookLogin);
+    googleLogin.addEventListener('click', googleLogin);
+    outlookLogin.addEventListener('click', outlookLogin);
 
     // Form validation
     [sourceInput, amountInput, dateInput].forEach(input => {
@@ -308,32 +312,48 @@ function hideModal() {
 }
 
 // Mock authentication functions (replace with real Firebase auth)
-function mockGoogleLogin() {
-    currentUser = {
-        name: 'John Doe',
-        email: 'john.doe@gmail.com',
-        provider: 'google'
-    };
-    updateAuthUI();
-    hideModal();
-    showToast('Signed in with Google successfully!');
+function googleLogin() {
+    auth.signInWithPopup(googleProvider)
+    .then((result) => {
+        // Google Access Token: result.credential.accessToken
+        // User info: result.user
+        currentUser = {
+            name: result.user.displayName,
+            email: result.user.email,
+            provider: "google"
+        };
+        updateAuthUI();
+        hideModal();
+        showToast('Signed in with Google successfully!');
+    })
+    .catch((error) => {
+        showToast(error.message);
+    });
 }
 
-function mockOutlookLogin() {
-    currentUser = {
-        name: 'Jane Smith',
-        email: 'jane.smith@outlook.com',
-        provider: 'microsoft'
-    };
-    updateAuthUI();
-    hideModal();
-    showToast('Signed in with Outlook successfully!');
+function outlookLogin() {
+    auth.signInWithPopup(outlookProvider)
+    .then((result) => {
+        currentUser = {
+            name: result.user.displayName,
+            email: result.user.email,
+            provider: "microsoft"
+        };
+        updateAuthUI();
+        hideModal();
+        showToast('Signed in with Outlook successfully!');
+    })
+    .catch((error) => {
+        showToast(error.message);
+    });
 }
 
 function logout() {
-    currentUser = null;
-    updateAuthUI();
-    showToast('Signed out successfully!');
+    auth.signOut().then(() => {
+        currentUser = null;
+        updateAuthUI();
+        showToast('Signed out successfully!');
+    });
 }
 
 function updateAuthUI() {
