@@ -7,9 +7,11 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
     <!-- jsPDF for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -26,14 +28,16 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="dropdown-menu" id="dropdownMenu">
-                    <div class="auth-section" id="dropdownAuthSection">
-                        <!-- Auth inserted by JS -->
+                    <div class="auth-section" id="authSection">
+                        <!-- Auth buttons will be populated by JavaScript -->
                     </div>
                 </div>
             </div>
         </nav>
 
+        <!-- Main Content -->
         <main class="main-content">
+            <!-- Transaction Type Tabs -->
             <div class="tab-container">
                 <button class="tab-btn active" data-type="income" id="incomeTab">
                     <i class="fas fa-plus-circle"></i>
@@ -44,6 +48,8 @@
                     Expense
                 </button>
             </div>
+
+            <!-- Transaction Form -->
             <div class="form-container">
                 <div class="form-group">
                     <label for="source">Source/Category</label>
@@ -62,10 +68,16 @@
                     Add <span id="transactionType">Income</span>
                 </button>
             </div>
+
+            <!-- Recent Transactions -->
             <div class="transactions-container">
                 <h3>Recent Transactions</h3>
-                <div class="transactions-list" id="transactionsList"></div>
+                <div class="transactions-list" id="transactionsList">
+                    <!-- Transactions will be populated by JavaScript -->
+                </div>
             </div>
+
+            <!-- Download Section -->
             <div class="download-container">
                 <button class="download-btn" id="weeklyBtn">
                     <i class="fas fa-download"></i>
@@ -76,6 +88,8 @@
                     Download Monthly PDF
                 </button>
             </div>
+
+            <!-- Summary Cards -->
             <div class="summary-container">
                 <div class="summary-card income">
                     <div class="summary-icon">
@@ -116,9 +130,14 @@
                 </div>
                 <div class="modal-body">
                     <p>Please log in to download your statement.</p>
-                    <div class="auth-section" id="modalAuthSection">
-                        <!-- Auth inserted by JS -->
-                    </div>
+                    <button class="auth-btn google-btn" id="googleLogin">
+                        <i class="fab fa-google"></i>
+                        Continue with Google
+                    </button>
+                    <button class="auth-btn outlook-btn" id="outlookLogin">
+                        <i class="fab fa-microsoft"></i>
+                        Continue with Outlook
+                    </button>
                 </div>
             </div>
         </div>
@@ -128,6 +147,7 @@
             <span id="toastMessage"></span>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
