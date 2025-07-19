@@ -20,6 +20,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
+// 2. App-level variables (not tied to DOM)
 let currentUser = null;
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let currentTransactionType = 'income';
