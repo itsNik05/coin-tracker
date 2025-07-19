@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Tracker - Budget App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-coins"></i>
+                <span>Coin Tracker</span>
+            </div>
+            <div class="nav-menu">
+                <button class="menu-btn" id="menuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="auth-section" id="authSection">
+                        <!-- Auth buttons will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Transaction Type Tabs -->
+            <div class="tab-container">
+                <button class="tab-btn active" data-type="income" id="incomeTab">
+                    <i class="fas fa-plus-circle"></i>
+                    Income
+                </button>
+                <button class="tab-btn" data-type="expense" id="expenseTab">
+                    <i class="fas fa-minus-circle"></i>
+                    Expense
+                </button>
+            </div>
+
+            <!-- Transaction Form -->
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="source">Source/Category</label>
+                    <input type="text" id="source" placeholder="e.g., Salary, Groceries, Freelancing">
+                </div>
+                <div class="form-group">
+                    <label for="amount">Amount</label>
+                    <input type="number" id="amount" placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date">
+                </div>
+                <button class="add-btn" id="addBtn">
+                    <i class="fas fa-plus"></i>
+                    Add <span id="transactionType">Income</span>
+                </button>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="transactions-container">
+                <h3>Recent Transactions</h3>
+                <div class="transactions-list" id="transactionsList">
+                    <!-- Transactions will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="download-container">
+                <button class="download-btn" id="weeklyBtn">
+                    <i class="fas fa-download"></i>
+                    Download Weekly PDF
+                </button>
+                <button class="download-btn" id="monthlyBtn">
+                    <i class="fas fa-download"></i>
+                    Download Monthly PDF
+                </button>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-container">
+                <div class="summary-card income">
+                    <div class="summary-icon">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div class="summary-info">
+                        <span class="summary-label">Total Income</span>
+                        <span class="summary-amount" id="totalIncome">₹0.00</span>
+                    </div>
+                </div>
+                <div class="summary-card expense">
+                    <div class="summary-icon">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="summary-info">
+                        <span class="summary-label">Total Expenses</span>
+                        <span class="summary-amount" id="totalExpense">₹0.00</span>
+                    </div>
+                </div>
+                <div class="summary-card balance">
+                    <div class="summary-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="summary-info">
+                        <span class="summary-label">Balance</span>
+                        <span class="summary-amount" id="totalBalance">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Login Modal -->
+        <div class="modal" id="loginModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Login Required</h2>
+                    <button class="close-btn" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Please log in to download your statement.</p>
+                    <button class="auth-btn google-btn" id="googleLogin">
+                        <i class="fab fa-google"></i>
+                        Continue with Google
+                    </button>
+                    <button class="auth-btn outlook-btn" id="outlookLogin">
+                        <i class="fab fa-microsoft"></i>
+                        Continue with Outlook
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div class="toast" id="toast">
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
