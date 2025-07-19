@@ -29,7 +29,7 @@
                 </button>
                 <div class="dropdown-menu" id="dropdownMenu">
                     <div class="auth-section" id="authSection">
-                        <!-- Auth buttons will be populated by JavaScript -->
+                        <!-- Auth buttons/fields injected by JS -->
                     </div>
                 </div>
             </div>
@@ -73,7 +73,7 @@
             <div class="transactions-container">
                 <h3>Recent Transactions</h3>
                 <div class="transactions-list" id="transactionsList">
-                    <!-- Transactions will be populated by JavaScript -->
+                    <!-- Transactions populated by JS -->
                 </div>
             </div>
 
@@ -130,23 +130,8 @@
                 </div>
                 <div class="modal-body">
                     <p>Please log in to download your statement.</p>
-                    <button class="auth-btn google-btn" id="googleLogin">
-                        <i class="fab fa-google"></i>
-                        Continue with Google
-                    </button>
-                    <!--<button class="auth-btn outlook-btn" id="outlookLogin">
-                        <i class="fab fa-microsoft"></i>
-                        Continue with Outlook
-                    </button> -->
-                    <div id="emailAuthFields">
-                      <input type="email" id="emailInput" placeholder="Email" required>
-                      <input type="password" id="passwordInput" placeholder="Password" required>
-                      <button class="auth-btn email-btn" id="emailRegister">
-                          Register
-                      </button>
-                      <button class="auth-btn email-btn" id="emailLogin">
-                          Login
-                      </button>
+                    <div class="auth-section" id="authSection">
+                        <!-- Auth buttons/fields injected by JS -->
                     </div>
                 </div>
             </div>
