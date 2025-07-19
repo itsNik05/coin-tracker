@@ -1,4 +1,4 @@
-// 1. Firebase SDK config
+// Firebase config
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -20,21 +20,20 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-// 2. App-level variables (not tied to DOM)
+
+// App-level state
 let currentUser = null;
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let currentTransactionType = 'income';
 
-// 3. App code (inside DOMContentLoaded)
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Firebase providers ---
+    // Firebase objects
     const auth = firebase.auth();
     const googleProvider = new firebase.auth.GoogleAuthProvider();
 
     // --- DOM elements ---
     const menuBtn = document.getElementById('menuBtn');
     const dropdownMenu = document.getElementById('dropdownMenu');
-    const authSection = document.getElementById('authSection');
     const incomeTab = document.getElementById('incomeTab');
     const expenseTab = document.getElementById('expenseTab');
     const sourceInput = document.getElementById('source');
@@ -47,23 +46,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const monthlyBtn = document.getElementById('monthlyBtn');
     const loginModal = document.getElementById('loginModal');
     const closeModal = document.getElementById('closeModal');
-    const googleLogin = document.getElementById('googleLogin');
     const totalIncome = document.getElementById('totalIncome');
     const totalExpense = document.getElementById('totalExpense');
     const totalBalance = document.getElementById('totalBalance');
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
 
-    // Email Auth fields **(Update your modal HTML if needed)**
-    const emailInput = document.getElementById('emailInput');
-    const passwordInput = document.getElementById('passwordInput');
-    const emailRegister = document.getElementById('emailRegister');
-    const emailLogin = document.getElementById('emailLogin');
-
-    // --- Menu (collapsible) ---
+    // --- Menu ---
     menuBtn.addEventListener('click', function(event) {
         dropdownMenu.classList.toggle('show');
         event.stopPropagation();
+        updateAuthUI(); // in case auth changed since last open
     });
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.nav-menu')) {
@@ -71,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // --- Tab switching ---
+    // --- Tabs ---
     incomeTab.addEventListener('click', () => switchTab('income'));
     expenseTab.addEventListener('click', () => switchTab('expense'));
 
@@ -82,24 +75,20 @@ document.addEventListener('DOMContentLoaded', function() {
     weeklyBtn.addEventListener('click', () => downloadPDF('weekly'));
     monthlyBtn.addEventListener('click', () => downloadPDF('monthly'));
 
-    // --- Auth Modal ---
+    // --- Modal ---
     closeModal.addEventListener('click', hideModal);
     loginModal.addEventListener('click', function(e) {
         if (e.target === loginModal) hideModal();
     });
-    googleLogin.addEventListener('click', googleLoginFunc);
-    emailRegister.addEventListener('click', emailRegisterFunc);
-    emailLogin.addEventListener('click', emailLoginFunc);
 
-    // --- Input Validation ---
     [sourceInput, amountInput, dateInput].forEach(input => {
         input.addEventListener('input', validateForm);
     });
 
-    // --- Set today's date default
+    // --- Set today's date by default ---
     dateInput.value = (new Date()).toISOString().split('T')[0];
 
-    // --- Firebase Auth watcher ---
+    // --- Auth watcher ---
     auth.onAuthStateChanged(function(user) {
         if (user) {
             currentUser = {
@@ -113,13 +102,14 @@ document.addEventListener('DOMContentLoaded', function() {
         updateAuthUI();
     });
 
-    // --- UI Init ---
+    // --- Initial UI ---
     renderTransactions();
     updateSummary();
     updateAuthUI();
     validateForm();
 
-    // ---- All app functions below ---
+    // --- App Functions ---
+
     function switchTab(type) {
         currentTransactionType = type;
         [incomeTab, expenseTab].forEach(btn => btn.classList.remove('active'));
@@ -188,7 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
         totalBalance.style.color = balance >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
     }
 
-    function showModal() { loginModal.classList.add('show'); }
+    function showModal() {
+        loginModal.classList.add('show');
+        updateAuthUI(); // always refresh modal content when shown
+    }
     function hideModal() { loginModal.classList.remove('show'); }
 
     function downloadPDF(period) {
@@ -252,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     }
 
-    // ---- Auth Functions ----
+    // ---- Auth Functions (Google, Email/Password) ----
 
     function googleLoginFunc() {
         auth.signInWithPopup(googleProvider)
@@ -271,9 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function emailRegisterFunc() {
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
+    function emailRegisterFunc(email, password) {
         if(!email || !password) {
             showToast("Email and password required.");
             return;
@@ -294,9 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function emailLoginFunc() {
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
+    function emailLoginFunc(email, password) {
         if (!email || !password) {
             showToast("Email and password required.");
             return;
@@ -325,83 +314,52 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
+    // --- AUTH UI for Modal and Side menu ---
     function updateAuthUI() {
-        if (currentUser) {
-            authSection.innerHTML = `
-                <div class="user-info">
-                    <h4>${currentUser.name}</h4>
-                    <p>${currentUser.email}</p>
-                    <button class="auth-btn" onclick="logout()" style="background: var(--danger-color); margin-top: 1rem;">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Sign Out
-                    </button>
-                </div>
-            `;
-        } else {
-            // No user: show Google & Email fields, but NOT Outlook
-            authSection.innerHTML = `
-                <button class="auth-btn google-btn" id="googleLoginInside">
-                    <i class="fab fa-google"></i>
-                    Sign in with Google
+        const dropdownAuth = document.getElementById('dropdownAuthSection');
+        const modalAuth = document.getElementById('modalAuthSection');
+        const authHTML = currentUser ? `
+            <div class="user-info">
+                <h4>${currentUser.name}</h4>
+                <p>${currentUser.email}</p>
+                <button class="auth-btn" onclick="logout()" style="background: var(--danger-color); margin-top: 1rem;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Sign Out
                 </button>
-                <input type="email" id="emailInput" class="auth-field" placeholder="Email" required>
-                <input type="password" id="passwordInput" class="auth-field" placeholder="Password" required>
-                <button class="auth-btn email-btn" id="emailRegisterInside">
-                    Register
-                </button>
-                <button class="auth-btn email-btn" id="emailLoginInside">
-                    Login
-                </button>
-            `;
-            // Handle newly created elements
-            document.getElementById("googleLoginInside").onclick = googleLoginFunc;
-            document.getElementById("emailRegisterInside").onclick = emailRegisterFuncHtml;
-            document.getElementById("emailLoginInside").onclick = emailLoginFuncHtml;
-        }
-    }
-    // For authSection html-declared inputs:
-    function emailRegisterFuncHtml() {
-        const email = document.getElementById('emailInput').value.trim();
-        const password = document.getElementById('passwordInput').value;
-        if(!email || !password) {
-            showToast("Email and password required.");
-            return;
-        }
-        auth.createUserWithEmailAndPassword(email, password)
-        .then((result) => {
-            currentUser = {
-                name: result.user.email.split('@')[0],
-                email: result.user.email,
-                provider: 'password'
+            </div>
+        ` : `
+            <button class="auth-btn google-btn" id="googleLoginInside">
+                <i class="fab fa-google"></i>
+                Sign in with Google
+            </button>
+            <input type="email" id="emailInput" class="auth-field" placeholder="Email" autocomplete="email" required>
+            <input type="password" id="passwordInput" class="auth-field" placeholder="Password" autocomplete="current-password" required>
+            <button class="auth-btn email-btn" id="emailRegisterInside">
+                Register
+            </button>
+            <button class="auth-btn email-btn" id="emailLoginInside">
+                Login
+            </button>
+        `;
+        if (dropdownAuth) dropdownAuth.innerHTML = authHTML;
+        if (modalAuth) modalAuth.innerHTML = authHTML;
+
+        // Add event listeners for the dynamically created fields/buttons in both locations
+        ['','Inside'].forEach(suffix => {
+            const glb = document.getElementById('googleLogin' + suffix);
+            const regb = document.getElementById('emailRegister' + suffix);
+            const loginb = document.getElementById('emailLogin' + suffix);
+            if (glb) glb.onclick = googleLoginFunc;
+            if (regb) regb.onclick = function() {
+                const emailVal = document.getElementById('emailInput').value.trim();
+                const passVal = document.getElementById('passwordInput').value;
+                emailRegisterFunc(emailVal, passVal);
             };
-            updateAuthUI();
-            hideModal();
-            showToast('Registered and logged in!');
-        })
-        .catch((error) => {
-            showToast(error.message);
-        });
-    }
-    function emailLoginFuncHtml() {
-        const email = document.getElementById('emailInput').value.trim();
-        const password = document.getElementById('passwordInput').value;
-        if(!email || !password) {
-            showToast("Email and password required.");
-            return;
-        }
-        auth.signInWithEmailAndPassword(email, password)
-        .then((result) => {
-            currentUser = {
-                name: result.user.email.split('@')[0],
-                email: result.user.email,
-                provider: 'password'
+            if (loginb) loginb.onclick = function() {
+                const emailVal = document.getElementById('emailInput').value.trim();
+                const passVal = document.getElementById('passwordInput').value;
+                emailLoginFunc(emailVal, passVal);
             };
-            updateAuthUI();
-            hideModal();
-            showToast('Logged in!');
-        })
-        .catch((error) => {
-            showToast(error.message);
         });
     }
 });
