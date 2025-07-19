@@ -1,12 +1,12 @@
 // Firebase Configuration (Replace with your actual config)
 const firebaseConfig = {
-    // Add your Firebase config here
-    apiKey: "your-api-key",
-    authDomain: "your-project.firebaseapp.com",
-    projectId: "your-project-id",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "your-app-id"
+  apiKey: "AIzaSyAJCuq-CEftttLiirQijz27XCxsja3MqVg",
+  authDomain: "coin-tracker-1ea73.firebaseapp.com",
+  projectId: "coin-tracker-1ea73",
+  storageBucket: "coin-tracker-1ea73.firebasestorage.app",
+  messagingSenderId: "952209322496",
+  appId: "1:952209322496:web:8f94a2cee2e4ab22e99ee5",
+  measurementId: "G-FXP640JDTB"
 };
 
 // Initialize Firebase (uncomment when you have config)
